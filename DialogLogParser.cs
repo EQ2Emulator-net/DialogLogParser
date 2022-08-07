@@ -171,36 +171,38 @@ namespace DialogLogParser
             string file = Name.Replace(" ", "") + ".lua";
             StreamWriter writer = new StreamWriter(Application.StartupPath + "/" + file);
 
+            writer.WriteLine("require \"SpawnScripts/GenericUriParser/DialogModule\"");
             writer.WriteLine("function hailed(NPC, Spawn)");
             writer.WriteLine("\tFaceTarget(NPC, Spawn)");
-            writer.WriteLine("\tlocal conversation = CreateConversation()");
+            writer.WriteLine("\tDialog.New(NPC, Spawn)");
 
-            foreach(Branch b in Dialogs)
+            foreach (Branch b in Dialogs)
             {
                 writer.WriteLine();
                 foreach (KeyValuePair<string, Branch> kvp in b.Options)
                 {
                     if (kvp.Value == null || string.IsNullOrEmpty(kvp.Value.Text))
                     {
-                        writer.WriteLine("\tAddConversationOption(conversation, \"" + kvp.Key + "\")");
+                        writer.WriteLine("\tDialog.AddOption(\"" + kvp.Key + "\")");
                     }
                     else
                     {
-                        writer.WriteLine("\tAddConversationOption(conversation, \"" + kvp.Key + "\", \"Option" + (kvp.Value.optionID = ++option) + "\")");
+                        writer.WriteLine("\tDialog.AddOption(\"" + kvp.Key + "\", \"Option" + (kvp.Value.optionID = ++option) + "\")");
                     }
                 }
 
-                writer.WriteLine("\tStartConversation(conversation, NPC, Spawn, \"" + b.Text +"\")");
+                writer.WriteLine("\tDialog.AddDialog(\"" + b.Text + "\")");
             }
 
+            writer.WriteLine("\tDialog.Start()");
             writer.WriteLine("end");
 
-            foreach(Branch b in Dialogs)
+            foreach (Branch b in Dialogs)
             {
-                foreach(KeyValuePair<string, Branch> kvp in b.Options)
+                foreach (KeyValuePair<string, Branch> kvp in b.Options)
                 {
                     if (!string.IsNullOrEmpty(kvp.Value.Text))
-                    LuaAddFunctions(writer, kvp.Value);
+                        LuaAddFunctions(writer, kvp.Value);
                 }
             }
 
@@ -221,16 +223,17 @@ namespace DialogLogParser
             writer.WriteLine();
             writer.WriteLine("function Option" + branch.optionID + "(NPC, Spawn)");
             writer.WriteLine("\tFaceTarget(NPC, Spawn)");
-            writer.WriteLine("\tlocal conversation = CreateConversation()");
+            writer.WriteLine("\tDialog.New(NPC, Spawn)");
             writer.WriteLine();
 
             foreach (KeyValuePair<string, Branch> kvp in branch.Options)
             {
-                writer.WriteLine("\tAddConversationOption(conversation, \"" + kvp.Key + "\"" + ((kvp.Value == null || string.IsNullOrEmpty(kvp.Value.Text)) ? ")" : (", \"Option" + (kvp.Value.optionID = ++option) + "\")")));
+                writer.WriteLine("\tDialog.AddOption(\"" + kvp.Key + "\"" + ((kvp.Value == null || string.IsNullOrEmpty(kvp.Value.Text)) ? ")" : (", \"Option" + (kvp.Value.optionID = ++option) + "\")")));
                 kvp.Value.optionID = option;
             }
 
-            writer.WriteLine("\tStartConversation(conversation, NPC, Spawn, \"" + branch.Text + "\")");
+            writer.WriteLine("\tDialog.AddDialog(\"" + branch.Text + "\")");
+            writer.WriteLine("\tDialog.Start()");
             writer.WriteLine("end");
 
             foreach (KeyValuePair<string, Branch> kvp in branch.Options)
